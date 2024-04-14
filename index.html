@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload PDF and Get YouTube Captions</title>
+</head>
+<body>
+    <h2>Upload PDF</h2>
+    <input type="file" id="pdfFileInput">
+    <button onclick="uploadPDF()">Upload PDF</button>
+
+    <h2>Get YouTube Captions</h2>
+    <input type="text" id="youtubeLinkInput" placeholder="Enter YouTube link">
+    <button onclick="fetchYouTubeCaptions()">Get Captions</button>
+
+    <h2>Fetch Website Text</h2>
+    <input type="text" id="websiteUrlInput" placeholder="Enter website URL">
+    <button onclick="fetchWebsiteText()">Fetch Text</button>
+    
+    <script>
+        async function uploadPDF() {
+            const pdfFileInput = document.getElementById('pdfFileInput');
+            const pdfFile = pdfFileInput.files[0];
+            
+            const formData = new FormData();
+            formData.append('pdfData', pdfFile);
+            
+            try {
+                const response = await fetch('http://localhost:3000/extractText', {
+                    method: 'POST',
+                    body: formData,
+                    mode: 'cors' // Add this line to set the mode to 'cors'
+                });
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    console.log('Extracted text:', text);
+                } else {
+                    console.error('Failed to extract text:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function fetchYouTubeCaptions() {
+            const youtubeLinkInput = document.getElementById('youtubeLinkInput');
+            const youtubeLink = youtubeLinkInput.value;
+
+            // Extract video ID from the YouTube link
+            const videoID = extractVideoID(youtubeLink);
+
+            try {
+                const response = await fetch(`http://localhost:3000/youtubeCaptions?videoID=${videoID}`, {
+                    method: 'GET',
+                    mode: 'cors' // Add this line to set the mode to 'cors'
+                });
+
+                if (response.ok) {
+                    const captions = await response.text(); // Change .json() to .text()
+                    console.log('YouTube Captions:', captions);
+                } else {
+                    console.error('Failed to get YouTube captions:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function extractVideoID(url) {
+            // Regular expression to extract video ID from YouTube link
+            const regExp = /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const match = url.match(regExp);
+            if (match && match[1]) {
+                return match[1];
+            } else {
+                console.error('Invalid YouTube link');
+                return null;
+            }
+        }
+
+
+        async function fetchWebsiteText() {
+            const websiteUrlInput = document.getElementById('websiteUrlInput');
+            const websiteUrl = websiteUrlInput.value;
+
+            try {
+                const response = await fetch(`http://localhost:3000/website?url=${encodeURIComponent(websiteUrl)}`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                if (response.ok) {
+                    const text = await response.text();
+                    console.log('Website Text:', text);
+                } else {
+                    console.error('Failed to fetch website text:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
